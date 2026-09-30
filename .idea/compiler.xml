@@ -10,11 +10,11 @@
         <module name="payment-service" />
         <module name="user-service" />
         <module name="eureka-server" />
-        <module name="ecom-api-gateway" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="api-gateway-platform" target="1.5" />
+      <module name="ecom-api-gateway" target="17" />
       <module name="gateway-service" target="17" />
     </bytecodeTargetLevel>
   </component>
