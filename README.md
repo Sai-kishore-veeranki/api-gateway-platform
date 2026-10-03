@@ -65,6 +65,10 @@ cd ../ecom-api-gateway
 - `/payments/**` -> `payment-service`
 - `/inventory/**` -> `inventory-service`
 
+## Rate limiting
+
+The API gateway uses Resilience4j to allow up to 100 requests per second across all routes and clients per gateway instance. Requests over the configured limit receive HTTP `429 Too Many Requests`. Adjust `gateway.rate-limit.limit-for-period` and `gateway.rate-limit.limit-refresh-period` in `ecom-api-gateway/src/main/resources/application.yaml` to change the limit.
+
 ## References
 
 - `eureka-server/README.md`

@@ -56,6 +56,11 @@ spring:
 server:
   port: 9090
 
+gateway:
+  rate-limit:
+    limit-for-period: 100
+    limit-refresh-period: 1s
+
 eureka:
   client:
     service-url:

@@ -7,6 +7,7 @@ The API Gateway is the public entry point for the platform. It receives client r
 - Routes HTTP traffic to backend services
 - Aggregates the platform behind one endpoint
 - Adds retry policies for downstream calls
+- Limits incoming traffic with a Resilience4j rate limiter
 - Centralizes access to the microservice ecosystem
 
 ## Port
@@ -43,3 +44,18 @@ cd ecom-api-gateway
 The gateway depends on Eureka being available. Start the registry first, then bring up the gateway and downstream services.
 
 For retries, routes to payment and inventory include configuration for transient failures, including timeout and server-side retry scenarios.
+
+## Rate limiting
+
+The gateway allows up to 100 requests per 1-second refresh period across all routes and clients for each gateway instance. Excess requests receive HTTP `429 Too Many Requests`. The limit is shared globally rather than tracked separately by client.
+
+Configure the limit in `src/main/resources/application.yaml`:
+
+```yaml
+gateway:
+  rate-limit:
+    limit-for-period: 100
+    limit-refresh-period: 1s
+```
+
+`limit-refresh-period` accepts a Spring duration value, such as `500ms`, `1s`, or `1m`.
