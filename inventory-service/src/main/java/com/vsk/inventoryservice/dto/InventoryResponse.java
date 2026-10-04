@@ -6,5 +6,5 @@ public record InventoryResponse(
         long productId,
         String name,
         BigDecimal unitPrice,
-        int availableQuantity) {
+        int availableQuantity) implements java.io.Serializable {
 }

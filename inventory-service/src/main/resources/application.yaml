@@ -6,6 +6,12 @@ server:
 spring:
   application:
     name: inventory-service
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      connect-timeout: 2s
+      timeout: 2s
 
 
 eureka:

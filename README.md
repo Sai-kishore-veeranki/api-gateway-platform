@@ -32,13 +32,15 @@ Eureka Server (8761)
 
 ## Quick start
 
-1. Start `eureka-server` first.
+1. Start Redis (required by `user-service` and `inventory-service`) and `eureka-server`.
 2. Start the remaining services in any order.
 3. Call the gateway at `http://localhost:9090`.
 
 Example:
 
 ```bash
+docker run --name api-platform-redis -p 6379:6379 -d redis:7-alpine
+
 cd eureka-server
 ./mvnw spring-boot:run
 
@@ -57,6 +59,9 @@ cd ../inventory-service
 cd ../ecom-api-gateway
 ./mvnw spring-boot:run
 ```
+
+The user and inventory services use Redis for read-through caching. Set
+`REDIS_HOST` and `REDIS_PORT` if Redis is not running at `localhost:6379`.
 
 ## Route map
 

@@ -2,6 +2,8 @@ package com.example.userservice.service;
 
 import com.example.userservice.dto.UserRequest;
 import com.example.userservice.dto.UserResponse;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,14 +24,17 @@ public class UserService {
         users.put(3L, new UserResponse(3, "Carol Davis", "carol@example.com"));
     }
 
+    @Cacheable(cacheNames = "users", key = "'all'")
     public List<UserResponse> getAllUsers() {
         return List.copyOf(users.values());
     }
 
+    @Cacheable(cacheNames = "userById", key = "#id", unless = "#result == null")
     public Optional<UserResponse> getUserById(long id) {
         return Optional.ofNullable(users.get(id));
     }
 
+    @CacheEvict(cacheNames = {"users", "userById"}, allEntries = true)
     public UserResponse createUser(UserRequest request) {
         long id = idSequence.incrementAndGet();
         UserResponse user = new UserResponse(id, request.name(), request.email());

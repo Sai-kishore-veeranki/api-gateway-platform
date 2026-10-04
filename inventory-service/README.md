@@ -34,6 +34,12 @@ cd inventory-service
 ./mvnw spring-boot:run
 ```
 
+## Redis cache
+
+Start Redis before this service. Inventory list and product lookups are cached
+for 30 seconds, and a successful stock reduction evicts both caches. Configure
+the connection with `REDIS_HOST` and `REDIS_PORT` (defaults: `localhost:6379`).
+
 ## Notes
 
 This service registers with Eureka and is exposed through the gateway at `/inventory/**`.

@@ -39,6 +39,13 @@ cd user-service
 ./mvnw spring-boot:run
 ```
 
+## Redis cache
+
+Start Redis before this service. User list and profile reads are cached in Redis;
+creating a user evicts both caches. List entries expire after 5 minutes and
+individual profiles after 10 minutes. Configure the connection with `REDIS_HOST`
+and `REDIS_PORT` (defaults: `localhost:6379`).
+
 ## Validation
 
 The `POST /users` endpoint validates:
