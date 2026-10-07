@@ -4,6 +4,8 @@ import com.example.orderservice.model.CreateOrderRequest;
 import com.example.orderservice.model.OrderResponse;
 import com.example.orderservice.service.OrderService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,6 +21,7 @@ import java.util.List;
 @RequestMapping("/orders")
 public class OrderController {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
     private final OrderService orderService;
 
     public OrderController(OrderService orderService) {
@@ -27,11 +30,13 @@ public class OrderController {
 
     @GetMapping
     public List<OrderResponse> getAllOrders() {
+        log.info("GET /orders requested");
         return orderService.getAllOrders();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<OrderResponse> getOrderById(@PathVariable long id) {
+        log.info("GET /orders/{} requested", id);
         return orderService.getOrderById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -40,6 +45,7 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request) {
+        log.info("POST /orders requested for user {} and product {}", request.userId(), request.productId());
         OrderResponse created = orderService.createOrder(request);
         return ResponseEntity.created(URI.create("/orders/" + created.orderId())).body(created);
     }

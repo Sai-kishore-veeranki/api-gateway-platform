@@ -1,6 +1,8 @@
 package com.vsk.inventoryservice.service;
 
 import com.vsk.inventoryservice.dto.InventoryResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import java.util.concurrent.ConcurrentMap;
 @Service
 public class InventoryService {
 
+    private static final Logger log = LoggerFactory.getLogger(InventoryService.class);
     private final ConcurrentMap<Long, InventoryResponse> inventory = new ConcurrentHashMap<>();
 
     public InventoryService() {
@@ -24,11 +27,13 @@ public class InventoryService {
 
     @Cacheable(cacheNames = "inventory", key = "'all'")
     public List<InventoryResponse> getAllInventory() {
+        log.info("Inventory snapshot requested; {} products available", inventory.size());
         return List.copyOf(inventory.values());
     }
 
     @Cacheable(cacheNames = "inventoryByProduct", key = "#productId")
     public InventoryResponse getInventory(long productId) {
+        log.info("Looking up inventory for product {}", productId);
         InventoryResponse item = inventory.get(productId);
         if (item == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
@@ -38,6 +43,7 @@ public class InventoryService {
 
     @CacheEvict(cacheNames = {"inventory", "inventoryByProduct"}, allEntries = true)
     public synchronized InventoryResponse reduceInventory(long productId, int quantity) {
+        log.info("Reducing inventory for product {} by {} units", productId, quantity);
         InventoryResponse item = getInventory(productId);
         if (quantity <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Quantity must be positive");
@@ -51,6 +57,7 @@ public class InventoryService {
                 item.unitPrice(),
                 item.availableQuantity() - quantity);
         inventory.put(productId, updated);
+        log.info("Inventory updated for product {} to {} items", productId, updated.availableQuantity());
         return updated;
     }
 }

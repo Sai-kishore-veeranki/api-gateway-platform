@@ -9,6 +9,8 @@ import com.example.orderservice.dto.PaymentResponse;
 import com.example.orderservice.model.CreateOrderRequest;
 import com.example.orderservice.model.OrderResponse;
 import feign.FeignException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -23,6 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 public class OrderService {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderService.class);
     private final UserClient userClient;
     private final InventoryClient inventoryClient;
     private final PaymentClient paymentClient;
@@ -39,14 +42,17 @@ public class OrderService {
     }
 
     public List<OrderResponse> getAllOrders() {
+        log.info("Fetching all orders: {} total", orders.size());
         return List.copyOf(orders.values());
     }
 
     public Optional<OrderResponse> getOrderById(long id) {
+        log.info("Looking up order by id {}", id);
         return Optional.ofNullable(orders.get(id));
     }
 
     public OrderResponse createOrder(CreateOrderRequest request) {
+        log.info("Creating order for user {} product {} quantity {}", request.userId(), request.productId(), request.quantity());
         callUserService(request.userId());
 
         InventoryResponse inventory = callInventoryService(request.productId());
@@ -70,6 +76,7 @@ public class OrderService {
         callInventoryReduction(request.productId(), request.quantity());
         OrderResponse confirmedOrder = withStatus(pendingOrder, "CONFIRMED");
         orders.put(orderId, confirmedOrder);
+        log.info("Order {} confirmed successfully", orderId);
         return confirmedOrder;
     }
 
