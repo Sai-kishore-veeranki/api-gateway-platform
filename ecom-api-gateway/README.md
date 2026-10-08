@@ -1,29 +1,37 @@
-# E-Commerce API Gateway
+# API Gateway
 
-The API Gateway is the public entry point for the platform. It receives client requests on a single port and forwards them to the appropriate microservice using Spring Cloud Gateway and Eureka-based service discovery.
+The API Gateway is the single front door for the entire platform. Instead of calling each service directly, clients send requests to one address: `http://localhost:9090`.
 
-## Responsibilities
+## What it does
 
-- Routes HTTP traffic to backend services
-- Aggregates the platform behind one endpoint
-- Adds retry policies for downstream calls
-- Limits incoming traffic with a Resilience4j rate limiter
-- Centralizes access to the microservice ecosystem
+- Routes incoming requests to the correct backend service
+- Uses Eureka to discover services dynamically
+- Adds retry handling for temporary failures
+- Limits traffic to protect the platform from spikes
 
 ## Port
 
 - `9090`
 
-## Route mappings
+## Start locally
 
-| Route | Target service |
+Make sure `eureka-server` is already running, then start the gateway:
+
+```bash
+cd ecom-api-gateway
+./mvnw spring-boot:run
+```
+
+## Route map
+
+| Gateway path | Target service |
 | --- | --- |
 | `/users/**` | `user-service` |
 | `/orders/**` | `order-service` |
 | `/payments/**` | `payment-service` |
 | `/inventory/**` | `inventory-service` |
 
-## Examples
+## Example requests
 
 ```bash
 curl http://localhost:9090/users
@@ -32,24 +40,19 @@ curl http://localhost:9090/payments
 curl http://localhost:9090/inventory
 ```
 
-## Run locally
+## Typical flow
 
-```bash
-cd ecom-api-gateway
-./mvnw spring-boot:run
-```
-
-## Notes
-
-The gateway depends on Eureka being available. Start the registry first, then bring up the gateway and downstream services.
-
-For retries, routes to payment and inventory include configuration for transient failures, including timeout and server-side retry scenarios.
+1. Start Eureka
+2. Start Redis if needed
+3. Start the service apps
+4. Start the gateway
+5. Send requests through `http://localhost:9090`
 
 ## Rate limiting
 
-The gateway allows up to 100 requests per 1-second refresh period across all routes and clients for each gateway instance. Excess requests receive HTTP `429 Too Many Requests`. The limit is shared globally rather than tracked separately by client.
+The gateway uses Resilience4j to limit requests. It allows up to 100 requests per second per gateway instance. If the limit is exceeded, the gateway responds with HTTP `429 Too Many Requests`.
 
-Configure the limit in `src/main/resources/application.yaml`:
+The limits are configured in `src/main/resources/application.yaml`.
 
 ```yaml
 gateway:
@@ -58,4 +61,12 @@ gateway:
     limit-refresh-period: 1s
 ```
 
-`limit-refresh-period` accepts a Spring duration value, such as `500ms`, `1s`, or `1m`.
+## Retry behavior
+
+Routes to payment and inventory include retry logic for transient errors such as timeouts or temporary service failures.
+
+## Troubleshooting
+
+- If the gateway cannot route requests, make sure Eureka is running.
+- If the endpoint returns 404, check the path and confirm the target service is up.
+- If requests are rejected with `429`, the rate limiter may be configured too aggressively for your testing load.

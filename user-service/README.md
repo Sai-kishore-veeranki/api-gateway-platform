@@ -1,24 +1,46 @@
 # User Service
 
-The User Service manages customer information for the ecommerce platform.
+The User Service manages customer data for the platform. It stores users and exposes them to the rest of the system through the API gateway.
 
-## Purpose
+## What it does
 
-- Register new users
-- Fetch all users
-- Fetch a single user by ID
-- Provide user data to other services such as orders and payments
+- Create new users
+- Read all users
+- Read a single user by ID
+- Cache user data in Redis for faster reads
 
 ## Port
 
 - `8081`
 
+## Before you start
+
+This service depends on Redis. Make sure Redis is running before launching it.
+
+```bash
+docker run --name api-platform-redis -p 6379:6379 -d redis:7-alpine
+```
+
+If Redis is not running on `localhost:6379`, set the environment variables:
+
+```bash
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+```
+
+## Start locally
+
+```bash
+cd user-service
+./mvnw spring-boot:run
+```
+
 ## API endpoints
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `GET` | `/users` | Return all users |
-| `GET` | `/users/{id}` | Return a single user by ID |
+| `GET` | `/users` | Get all users |
+| `GET` | `/users/{id}` | Get one user by ID |
 | `POST` | `/users` | Create a new user |
 
 ## Example request
@@ -32,25 +54,31 @@ curl -X POST http://localhost:8081/users \
   }'
 ```
 
-## Run locally
+## Access through the gateway
+
+Once the gateway is running, use:
 
 ```bash
-cd user-service
-./mvnw spring-boot:run
+curl http://localhost:9090/users
+curl http://localhost:9090/users/1
 ```
 
-## Redis cache
+## Data validation
 
-Start Redis before this service. User list and profile reads are cached in Redis;
-creating a user evicts both caches. List entries expire after 5 minutes and
-individual profiles after 10 minutes. Configure the connection with `REDIS_HOST`
-and `REDIS_PORT` (defaults: `localhost:6379`).
+When creating a user:
 
-## Validation
-
-The `POST /users` endpoint validates:
-
-- `name` must not be blank
+- `name` cannot be blank
 - `email` must be a valid email format
 
-The service registers itself with Eureka and is discoverable via the gateway under `/users/**`.
+## Redis cache behavior
+
+- User list reads are cached in Redis
+- Individual profile reads are cached too
+- Creating a user clears the relevant cache entries
+- Cache expiration is set for a few minutes to keep data fresh
+
+## Troubleshooting
+
+- If the app fails to start, confirm Redis is reachable.
+- If you cannot access it through the gateway, verify `eureka-server` is running and the service was registered.
+- If you get validation errors, check that the request JSON includes a valid name and email.

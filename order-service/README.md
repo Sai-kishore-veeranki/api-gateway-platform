@@ -1,24 +1,31 @@
 # Order Service
 
-The Order Service handles order creation and retrieval for the ecommerce workflow.
+The Order Service handles customer orders and coordinates the order flow in the platform.
 
-## Purpose
+## What it does
 
-- List orders
-- Retrieve an order by ID
-- Create a new order
-- Coordinate communication with related services for validation and payment workflows
+- List existing orders
+- Fetch one order by ID
+- Create new orders
+- Validate user and product information before confirming an order
 
 ## Port
 
 - `8082`
 
+## Start locally
+
+```bash
+cd order-service
+./mvnw spring-boot:run
+```
+
 ## API endpoints
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `GET` | `/orders` | Return all orders |
-| `GET` | `/orders/{id}` | Return one order by ID |
+| `GET` | `/orders` | Get all orders |
+| `GET` | `/orders/{id}` | Get an order by ID |
 | `POST` | `/orders` | Create a new order |
 
 ## Example request
@@ -33,15 +40,35 @@ curl -X POST http://localhost:8082/orders \
   }'
 ```
 
-## Run locally
+## Access through the gateway
+
+Once the gateway is running, call:
 
 ```bash
-cd order-service
-./mvnw spring-boot:run
+curl http://localhost:9090/orders
+curl -X POST http://localhost:9090/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": 1,
+    "productId": 1001,
+    "quantity": 2
+  }'
 ```
+
+## Validation rules
+
+The service checks that:
+
+- `userId` is present
+- `productId` is present
+- `quantity` is valid and positive
 
 ## Notes
 
-The service uses Spring Cloud support for service-to-service interaction and is exposed through the API gateway at `/orders/**`.
+This service is part of the business flow and can interact with other services for validation and payment processing. It registers with Eureka and is exposed through the gateway at `/orders/**`.
 
-`POST /orders` validates `userId`, `productId`, and `quantity` and returns an order payload describing status and totals.
+## Troubleshooting
+
+- If requests fail, confirm `eureka-server` is running.
+- If the gateway cannot find the service, check the Eureka dashboard.
+- If order creation fails, make sure the provided IDs and quantity are valid.

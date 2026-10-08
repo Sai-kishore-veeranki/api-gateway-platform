@@ -1,25 +1,47 @@
 # Inventory Service
 
-The Inventory Service manages product stock and availability across the platform.
+The Inventory Service manages stock levels for products in the platform. It is responsible for checking available quantity and lowering stock when an order is placed.
 
-## Purpose
+## What it does
 
-- List inventory items
-- Fetch item details by product ID
-- Reduce stock quantities for an order
-- Support resilience and retry patterns during stock checks
+- Lists available inventory items
+- Checks product availability by product ID
+- Reduces stock when an order is processed
+- Uses Redis cache to speed up reads
 
 ## Port
 
 - `8084`
 
+## Before you start
+
+This service also depends on Redis. Start Redis first:
+
+```bash
+docker run --name api-platform-redis -p 6379:6379 -d redis:7-alpine
+```
+
+If needed, configure:
+
+```bash
+export REDIS_HOST=localhost
+export REDIS_PORT=6379
+```
+
+## Start locally
+
+```bash
+cd inventory-service
+./mvnw spring-boot:run
+```
+
 ## API endpoints
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `GET` | `/inventory` | Return all inventory items |
-| `GET` | `/inventory/{productId}` | Get product availability |
-| `PUT` | `/inventory/{productId}/reduce?quantity={value}` | Reduce product stock |
+| `GET` | `/inventory` | Get all stock items |
+| `GET` | `/inventory/{productId}` | Get availability for a product |
+| `PUT` | `/inventory/{productId}/reduce?quantity={value}` | Reduce available stock |
 
 ## Example request
 
@@ -27,21 +49,31 @@ The Inventory Service manages product stock and availability across the platform
 curl -X PUT "http://localhost:8084/inventory/1001/reduce?quantity=2"
 ```
 
-## Run locally
+## Access through the gateway
 
 ```bash
-cd inventory-service
-./mvnw spring-boot:run
+curl http://localhost:9090/inventory
+curl -X PUT "http://localhost:9090/inventory/1001/reduce?quantity=2"
 ```
 
-## Redis cache
+## Business rules
 
-Start Redis before this service. Inventory list and product lookups are cached
-for 30 seconds, and a successful stock reduction evicts both caches. Configure
-the connection with `REDIS_HOST` and `REDIS_PORT` (defaults: `localhost:6379`).
+- Quantity to reduce must be greater than zero
+- The service validates requested stock updates before continuing
+- Successful stock reduction clears cached inventory results
+
+## Redis cache behavior
+
+- Inventory lookups are cached for a short period
+- Stock reduction clears cached entries to reflect the latest availability
+- Cache settings can be adjusted using `REDIS_HOST` and `REDIS_PORT`
 
 ## Notes
 
-This service registers with Eureka and is exposed through the gateway at `/inventory/**`.
+This service registers with Eureka and is exposed through the gateway under `/inventory/**`. It is designed to support retry and resilience patterns during transient backend issues.
 
-Stock updates are validated with positive quantity checks, and the controller is prepared for retry behavior in case transient backend issues occur.
+## Troubleshooting
+
+- If stock requests fail, confirm Redis is running.
+- If the service is unreachable through the gateway, confirm Eureka is up.
+- If quantity validation fails, make sure your request uses a positive number.
