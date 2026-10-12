@@ -8,6 +8,7 @@ This repository is a beginner-friendly microservices demo built with Spring Boot
 - API routing through Spring Cloud Gateway
 - Independent backend services for users, orders, payments, and inventory
 - Redis-based caching in selected services
+- Aspect-oriented logging for service methods to track execution time and failures
 - Rate limiting and retry behavior at the gateway
 
 ## Service overview
