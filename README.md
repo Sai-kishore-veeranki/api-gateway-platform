@@ -49,7 +49,15 @@ Before starting the platform, make sure you have:
 
 ## Quick start
 
-The easiest way to run everything locally is:
+The easiest way to run everything locally is to use Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+This starts Redis, Eureka, the application services, and the API gateway in one command. Once all services are running, test the routes through `http://localhost:9090`.
+
+### Manual startup (if you prefer local Java processes)
 
 1. Start Redis
 2. Start Eureka
@@ -69,7 +77,7 @@ If you already have Redis installed locally, you can skip Docker and use your ex
 
 ```bash
 cd eureka-server
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 Then open:
@@ -86,29 +94,29 @@ Open separate terminals and run each service:
 
 ```bash
 cd user-service
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 ```bash
 cd order-service
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 ```bash
 cd payment-service
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 ```bash
 cd inventory-service
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 ### 4) Start the API gateway
 
 ```bash
 cd ecom-api-gateway
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 ### 5) Test the gateway

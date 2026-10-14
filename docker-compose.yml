@@ -1,0 +1,117 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: api-platform-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  eureka-server:
+    image: maven:3.9.11-eclipse-temurin-17
+    working_dir: /workspace
+    volumes:
+      - ./eureka-server:/workspace
+    command: mvn spring-boot:run
+    ports:
+      - "8761:8761"
+    environment:
+      EUREKA_CLIENT_REGISTER_WITH_EUREKA: "false"
+      EUREKA_CLIENT_FETCH_REGISTRY: "false"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  user-service:
+    image: maven:3.9.11-eclipse-temurin-17
+    working_dir: /workspace
+    volumes:
+      - ./user-service:/workspace
+    command: mvn spring-boot:run
+    ports:
+      - "8081:8081"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  order-service:
+    image: maven:3.9.11-eclipse-temurin-17
+    working_dir: /workspace
+    volumes:
+      - ./order-service:/workspace
+    command: mvn spring-boot:run
+    ports:
+      - "8082:8082"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_started
+
+  payment-service:
+    image: maven:3.9.11-eclipse-temurin-17
+    working_dir: /workspace
+    volumes:
+      - ./payment-service:/workspace
+    command: mvn spring-boot:run
+    ports:
+      - "8083:8083"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_started
+
+  inventory-service:
+    image: maven:3.9.11-eclipse-temurin-17
+    working_dir: /workspace
+    volumes:
+      - ./inventory-service:/workspace
+    command: mvn spring-boot:run
+    ports:
+      - "8084:8084"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      redis:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
+
+  ecom-api-gateway:
+    image: maven:3.9.11-eclipse-temurin-17
+    working_dir: /workspace
+    volumes:
+      - ./ecom-api-gateway:/workspace
+    command: mvn spring-boot:run
+    ports:
+      - "9090:9090"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_started
+      user-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+
+volumes:
+  redis_data:
