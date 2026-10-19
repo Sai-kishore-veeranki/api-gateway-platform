@@ -1,10 +1,12 @@
 package org.vsk.ecomapigateway;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -21,7 +23,7 @@ class ApiGatewayRateLimitFilterTests {
 
     @Test
     void allowsRequestWhenPermissionIsAvailable() {
-        ApiGatewayRateLimitFilter filter = new ApiGatewayRateLimitFilter(rateLimiter());
+        ApiGatewayRateLimitFilter filter = new ApiGatewayRateLimitFilter(rateLimiter(), new ObjectMapper());
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/users").build());
         AtomicBoolean chainInvoked = new AtomicBoolean();
@@ -39,7 +41,7 @@ class ApiGatewayRateLimitFilterTests {
     void rejectsRequestWhenLimitIsExceeded() {
         RateLimiter rateLimiter = rateLimiter();
         rateLimiter.acquirePermission();
-        ApiGatewayRateLimitFilter filter = new ApiGatewayRateLimitFilter(rateLimiter);
+        ApiGatewayRateLimitFilter filter = new ApiGatewayRateLimitFilter(rateLimiter, new ObjectMapper());
         MockServerWebExchange exchange = MockServerWebExchange.from(
                 MockServerHttpRequest.get("/users").build());
         AtomicBoolean chainInvoked = new AtomicBoolean();
@@ -51,6 +53,10 @@ class ApiGatewayRateLimitFilterTests {
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
         assertEquals(HttpStatus.TOO_MANY_REQUESTS, exchange.getResponse().getStatusCode());
+        assertEquals(MediaType.APPLICATION_JSON, exchange.getResponse().getHeaders().getContentType());
+        String body = exchange.getResponse().getBodyAsString().block();
+        assertTrue(body.contains("\"status\":429"));
+        assertTrue(body.contains("\"path\":\"/users\""));
         assertFalse(chainInvoked.get());
     }
 

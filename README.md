@@ -172,6 +172,25 @@ The gateway exposes a simple route structure for the microservices:
 
 The gateway acts as a single public API layer while the internal services remain separate.
 
+## Error response format
+
+Invalid requests, missing resources, and downstream service failures return a consistent JSON response:
+
+```json
+{
+  "timestamp": "2026-10-19T15:30:00Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "Request validation failed",
+  "path": "/payments",
+  "validationErrors": {
+    "amount": "must be greater than or equal to 0.01"
+  }
+}
+```
+
+The `validationErrors` object is empty when the error is not caused by invalid fields. Payment requests require positive order and user IDs and an amount of at least `0.01` with no more than two decimal places.
+
 ## Important configuration notes
 
 - `user-service` and `inventory-service` use Redis caching.

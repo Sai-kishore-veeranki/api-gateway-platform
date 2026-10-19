@@ -4,20 +4,25 @@ import com.example.orderservice.model.CreateOrderRequest;
 import com.example.orderservice.model.OrderResponse;
 import com.example.orderservice.service.OrderService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 import java.util.List;
 
 @RestController
+@Validated
 @RequestMapping("/orders")
 public class OrderController {
 
@@ -35,11 +40,11 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<OrderResponse> getOrderById(@PathVariable long id) {
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable @Positive long id) {
         log.info("GET /orders/{} requested", id);
-        return orderService.getOrderById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        OrderResponse order = orderService.getOrderById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        return ResponseEntity.ok(order);
     }
 
     @PostMapping

@@ -35,15 +35,15 @@ public class InventoryController {
 
 
     @GetMapping("/{productId}")
-    public InventoryResponse getInventory(@PathVariable long productId) throws Exception {
+    public InventoryResponse getInventory(@PathVariable @Positive long productId) {
         log.info("GET /inventory/{} requested", productId);
         return inventoryService.getInventory(productId);
     }
 
     @PutMapping("/{productId}/reduce")
     public InventoryResponse reduceInventory(
-            @PathVariable long productId,
-            @RequestParam @Positive int quantity) throws Exception {
+            @PathVariable @Positive long productId,
+            @RequestParam @Positive int quantity) {
         log.info("PUT /inventory/{}/reduce requested for quantity {}", productId, quantity);
         return inventoryService.reduceInventory(productId, quantity);
     }

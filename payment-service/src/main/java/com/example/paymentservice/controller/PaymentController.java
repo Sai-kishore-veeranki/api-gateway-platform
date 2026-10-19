@@ -4,20 +4,25 @@ import com.example.paymentservice.dto.PaymentRequest;
 import com.example.paymentservice.dto.PaymentResponse;
 import com.example.paymentservice.service.PaymentService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
+@Validated
 @RequestMapping("/payments")
 public class PaymentController {
 
@@ -35,11 +40,11 @@ public class PaymentController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String, Object>> getPaymentById(@PathVariable String id) {
+    public ResponseEntity<Map<String, Object>> getPaymentById(@PathVariable @NotBlank String id) {
         log.info("GET /payments/{} requested", id);
-        return paymentService.getPaymentById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        Map<String, Object> payment = paymentService.getPaymentById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Payment not found"));
+        return ResponseEntity.ok(payment);
     }
 
     @GetMapping("/flaky")
